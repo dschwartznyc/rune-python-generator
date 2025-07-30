@@ -91,7 +91,7 @@
         <logback.version>1.5.6</logback.version>
 
         <!-- test -->
-        <junit.version>5.8.1</junit.version>
+        <junit.version>5.13.4</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
 
         <!-- plugin -->
