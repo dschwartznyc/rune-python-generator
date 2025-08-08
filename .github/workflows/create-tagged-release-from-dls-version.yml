@@ -76,12 +76,12 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: jar-files
-        path: target/*.jar
+        path: target/python*.jar
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.TAG_NAME }}
-        files: target/*.jar
+        files: target/python*.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
