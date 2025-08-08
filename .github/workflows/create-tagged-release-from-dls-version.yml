@@ -72,14 +72,6 @@ jobs:
     - name: Revert POM changes
       run: git checkout -- pom.xml
 
-    - name: Rename JAR to match DSL version
-      run: |
-        # Find the built JAR (should be only one main jar)
-        ORIGINAL_JAR=$(ls target/${ARTIFACT_ID}-*.jar | grep -v 'sources\|javadoc\|tests')
-        echo "Original JAR: $ORIGINAL_JAR"
-        echo "Renaming to: target/$JAR_NAME"
-        mv "$ORIGINAL_JAR" "target/$JAR_NAME"
-
     - name: Upload JAR file
       uses: actions/upload-artifact@v4
       with:
