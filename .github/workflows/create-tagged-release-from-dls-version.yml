@@ -45,7 +45,7 @@ jobs:
     - name: Set tag and jar name
       id: set_tag
       run: |
-        TAG="rosetta-dsl-v${ROSETTA_VERSION}"
+        TAG="${ROSETTA_VERSION}"
         JAR_NAME="${ARTIFACT_ID}-${ROSETTA_VERSION}.jar"
         echo "TAG_NAME=$TAG" >> $GITHUB_ENV
         echo "JAR_NAME=$JAR_NAME" >> $GITHUB_ENV
