@@ -30,10 +30,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Extract rosetta.dsl.version from pom.xml
+    - name: Extract rosetta.dsl.version from pom.xml using Maven
       id: get_version
       run: |
-        VERSION=$(xmllint --xpath "string(//project/properties/rosetta.dsl.version)" pom.xml)
+        VERSION=$(mvn help:evaluate -Dexpression=rosetta.dsl.version -q -DforceStdout)
         echo "rosetta.dsl.version=$VERSION"
         echo "ROSETTA_VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
