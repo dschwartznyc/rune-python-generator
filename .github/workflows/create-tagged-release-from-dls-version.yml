@@ -30,20 +30,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
-    - name: Extract rosetta.dsl.version from pom.xml using Maven
+    - name: Extract rosetta.dsl.version and artifactId from pom.xml using Maven
       id: get_version
       run: |
         VERSION=$(mvn help:evaluate -Dexpression=rosetta.dsl.version -q -DforceStdout)
+        ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
         echo "rosetta.dsl.version=$VERSION"
+        echo "artifactId=$ARTIFACT_ID"
         echo "ROSETTA_VERSION=$VERSION" >> $GITHUB_ENV
+        echo "ARTIFACT_ID=$ARTIFACT_ID" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
 
-    - name: Set tag name
+    - name: Set tag and jar name
       id: set_tag
       run: |
         TAG="rosetta-dsl-v${ROSETTA_VERSION}"
+        JAR_NAME="${ARTIFACT_ID}-${ROSETTA_VERSION}.jar"
         echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+        echo "JAR_NAME=$JAR_NAME" >> $GITHUB_ENV
         echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
 
     - name: Create tag if not exists
       run: |
@@ -56,20 +63,34 @@ jobs:
           git push origin "$TAG_NAME"
         fi
 
-    - name: Build with Maven
-      run: mvn -B package -Psign-artifacts
+    - name: Build with Maven and set version
+      run: |
+        echo "Updating POM version to $ROSETTA_VERSION"
+        mvn -B versions:set -DnewVersion=$ROSETTA_VERSION
+        mvn -B package -Psign-artifacts
 
-    - name: Upload JAR files
+    - name: Revert POM changes
+      run: git checkout -- pom.xml
+
+    - name: Rename JAR to match DSL version
+      run: |
+        # Find the built JAR (should be only one main jar)
+        ORIGINAL_JAR=$(ls target/${ARTIFACT_ID}-*.jar | grep -v 'sources\|javadoc\|tests')
+        echo "Original JAR: $ORIGINAL_JAR"
+        echo "Renaming to: target/$JAR_NAME"
+        mv "$ORIGINAL_JAR" "target/$JAR_NAME"
+
+    - name: Upload JAR file
       uses: actions/upload-artifact@v4
       with:
-        name: jar-files
-        path: target/*.jar
+        name: ${{ env.JAR_NAME }}
+        path: target/${{ env.JAR_NAME }}
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: Release ${{ env.TAG_NAME }}
-        files: target/*.jar
+        files: target/${{ env.JAR_NAME }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
