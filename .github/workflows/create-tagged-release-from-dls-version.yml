@@ -1,0 +1,75 @@
+name: Create Tagged Release from rosetta.dsl.version
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        cache: maven
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Extract rosetta.dsl.version from pom.xml
+      id: get_version
+      run: |
+        VERSION=$(xmllint --xpath "string(//project/properties/rosetta.dsl.version)" pom.xml)
+        echo "rosetta.dsl.version=$VERSION"
+        echo "ROSETTA_VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Set tag name
+      id: set_tag
+      run: |
+        TAG="rosetta-dsl-v${ROSETTA_VERSION}"
+        echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Create tag if not exists
+      run: |
+        if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+          echo "Tag $TAG_NAME already exists."
+        else
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+        fi
+
+    - name: Build with Maven
+      run: mvn -B package -Psign-artifacts
+
+    - name: Upload JAR files
+      uses: actions/upload-artifact@v4
+      with:
+        name: jar-files
+        path: target/*.jar
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ env.TAG_NAME }}
+        name: Release ${{ env.TAG_NAME }}
+        files: target/*.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
