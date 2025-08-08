@@ -72,11 +72,11 @@ jobs:
     - name: Revert POM changes
       run: git checkout -- pom.xml
 
-    - name: Upload JAR file
+    - name: Upload JAR files
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.JAR_NAME }}
-        path: target/${{ env.JAR_NAME }}
+        name: jar-files
+        path: target/*.jar
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
