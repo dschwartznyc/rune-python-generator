@@ -6,6 +6,3 @@ on:
   pull_request:
     branches: [ "main" ]
 
-jobs:
-  build_and_test:
-    uses: ./.github/workflows/build-and-test-core.yml
